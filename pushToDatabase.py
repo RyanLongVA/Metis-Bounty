@@ -1402,7 +1402,6 @@ def main():
             cleanTempFolder()
             currentRange = mysqlfunc.rangeIdToDomainRange(cur, a)   
             outScope = mysqlfunc.domainRangeByrangeId(cur, a)
-            pdb.set_trace()
             # Full, unedited brutesubs output VIA subprocess call
             b = callBrutesubs(a)
             c = dataToSqlParse.returnInScope(b, outScope)
