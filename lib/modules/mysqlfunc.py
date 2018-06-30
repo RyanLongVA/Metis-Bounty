@@ -6,7 +6,7 @@
 # !!! need to encapsulate a cur with something like a using statement
 
 # Database errors
-import MySQLdb, pdb
+import MySQLdb, pdb, logger, dnsCheck
 from MySQLdb import Error
 #All the variables for paths
 from variables import *
@@ -32,52 +32,93 @@ def sqlCommit(conn):
 def sqlExe(cur, statem):
     cur.execute(statem)
 
+# Returns the domains based on the domainRangeId
+def domainsBydomainRangeId(id):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    statem = "SELECT  domainName FROM Domains WHERE domainRangeId = %s"%str(id)
+    cur.execute(statem)
+    results = []
+    for column in cur.fetchall():
+        results.append(column[0])
+    return results
 
 # Return the domainRange value associated with the rangeId
 def domainRangeByrangeId(cur, id):
-    
     statem = "SELECT domainRange FROM InScope WHERE domainRangeId = %s"%str(id)
     cur.execute(statem)
     return cur.fetchone()[0]
 
 #Good for iterates on own commit
-def insertDomain(cur, domain, domainRangeId, title=None):
-    if title:
-        #Insert with title
-        #pdb catch in case something goes wrong 
-        try:
-            statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, domainTitle, dateFound) VALUES (%s, \"%s\", \"%s\", CURDATE())"%(domainRangeId, domain, title)
-            cur.execute(statem)
-        except Exception,e:
-            print e 
-            pdb.set_trace()
-    else:
-        #pdb catch in case something goes wrong  
-        try: 
-            statem ="INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
-            cur.execute(statem)
-        except Exception,e:
-            print e 
-            pdb.set_trace()
+def insertDomain(domain, domainRangeId, title=None):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    # checkInternet
+    if dnsCheck.checkInternet:
+        # Check resolvability of the site
+        if dnsCheck.checkHostByName(domain):
+            if title:
+                #Insert with title
+                #pdb catch in case something goes wrong 
+                try:
+                    statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, domainTitle, dateFound) VALUES (%s, \"%s\", \"%s\", CURDATE())"%(domainRangeId, domain, title)
+                    cur.execute(statem)
+                    print '[+] New Domain:',domain
+                    # Log the domain
+                    logger.logNewDomain(domain)
+                except Exception,e:
+                    print e 
+                    pdb.set_trace()
+            else:
+                #pdb catch in case something goes wrong  
+                try: 
+                    statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
+                    cur.execute(statem)
+                    print '[+] New Domain:',domain
+                    logger.logNewDomain(domain)
+                except Exception,e:
+                    print e 
+                    pdb.set_trace()
+            # Commit 
+            conn.commit()
+
+def removeDomain(domain):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM Domains WHERE domainName like \'%s\''%(domain))
+    conn.commit()
+
+def removeDomainArray(domainArray):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    for domain in domainArray:
+        cur.execute('DELETE FROM Domains WHERE domainName like \'%s\''%(domain))
+    conn.commit()
+
+def returnAllDomains(cur):
+    statem = "SELECT domainName FROM Domains"
+    cur.execute(statem)
+    results = [] 
+    for column in cur.fetchall():
+        results.append(column[0])
+    return results
 
 def returnInScopeIds(cur, program):
     statem = "SELECT domainRangeId FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \"%s\")"%(program)
-    print statem
     results = []
     cur.execute(statem)
     for a in cur.fetchall():
         results.append(int(a[0]))
     return results
 
-def programNameToInScopeIds(conn, cProgram):
-    # Returns the domainRangeId's for a program
-    cur = conn.cursor()
-    statem = "SELECT `domainRangeId` FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \'%s\')"%(cProgram)
-    cur.execute(statem)
-    b = [] 
-    for a in cur.fetchall():
-        b.append(int(a[0]))
-    return b
+# def programNameToInScopeIds(cur, cProgram):
+#     # Returns the domainRangeId's for a program
+#     statem = "SELECT `domainRangeId` FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \'%s\')"%(cProgram)
+#     cur.execute(statem)
+#     b = [] 
+#     for a in cur.fetchall():
+#         b.append(int(a[0]))
+#     return b
 
 def blacklistedByDomainRangeId(cur, id):
     statem = "SELECT blacklistedContent FROM BlacklistedDomains WHERE domainRangeId = %s"%str(id)

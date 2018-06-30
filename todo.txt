@@ -1,3 +1,4 @@
-
 - With IPs we can now scan for virtualhosts within them 
 - ASN Scanning 
+- Update check for tools >> maybe just a script
+    - go get upgrade (subfinder)

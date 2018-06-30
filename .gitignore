@@ -1,6 +1,15 @@
-##Paths/Database##
+# Variables to things
 lib/modules/variables.py
 lib/modules/variables.pyc
+
+# Old log
 lib/data/changes.txt
+
+# Temp files
 tempFiles/*
-test.dump
+
+# Wordlists
+wordlists/dns/*
+
+# New log
+log.txt

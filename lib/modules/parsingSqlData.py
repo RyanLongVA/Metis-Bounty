@@ -1,4 +1,4 @@
-import pdb, MySQLdb 
+import pdb, MySQLdb, mysqlfunc
 from MySQLdb import Error 
 ###Summary:
 ###General Paring before a insert
@@ -52,5 +52,36 @@ def returnDomainsByRangeId(conn, domainId):
 		print e
 		pdb.set_trace()
 
+def returnNewDomainsArrayInScopeObject(domainArray, InScopeObject):
+    currentUniques = []
+    conn = mysqlfunc.create_dbConnection()
+    cur = conn.cursor()
+    # Return the current domains of the scope
+    currentDomains = []
+    cur.execute("SELECT domainName from Domains WHERE domainRangeId = %s"%InScopeObject.InScopeId)
+    for a in cur.fetchall():
+        currentDomains.append(a[0])
+
+    # Remove duplicates from the b  
+    for a in filter(None, domainArray.split('\n')):
+        if a not in currentDomains and not a.startswith('.'):
+            # It's definitely a unique domain
+            currentUniques.append(a)
+
+    # Make sure they are all inScope        
+    if InScopeObject.ScopeText.startswith("*."):
+        for domain in currentUniques:
+            # check if inscope
+            if domain.endswith(InScopeObject.ScopeText[2:]):
+                continue
+            else:
+                print '\n\n[-] Domain:' + domain
+                print 'Was not in: ' + InScopeObject.ScopeText 
+                pdb.set_trace()
+    else: 
+        print '[-] Scope did not start with *.'
+        print InScopeObject.ScopeText
+        pdb.set_trace()
+    return currentUniques
 
 
