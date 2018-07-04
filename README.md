@@ -1,6 +1,6 @@
-#pushToDatabase2.py
+# pushToDatabase2.py
 
-##Status: Dev/Testing --> New Args are incomplete
+### Status: Dev/Testing --> New Args are incomplete
 
 Repo for 2.0 of pushToDatabase.py
 
