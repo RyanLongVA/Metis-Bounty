@@ -1,7 +1,10 @@
 #pushToDatabase2.py
 
-Repo for 2.0 of pushToDatabase.
+##Status: Dev/Testing --> New Args are incomplete
 
-Reasoning:
-    - I'm changing the database structure and making the primary key IP (servers) instead of domains... it was a dumb mistakes on my part... the only issue is I'm not sure how much will break with what I change
+Repo for 2.0 of pushToDatabase.py
+
+	- Complete revamp of the data formating 
+	- Args calls are way cleaner
+	- Adding a rules engine for sorting domains
 
