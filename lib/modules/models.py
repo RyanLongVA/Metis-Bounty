@@ -65,6 +65,17 @@ class InScope:
 			print '[-] Exiting...'
 			exit()
 
+# RulesDomain
+# -- Model for each domain within the rules engine
+
+class RulesDomain:
+
+	def __init__(self, DomainName, DomainId, InScopeId, ProgramId):
+		self.DomainName = DomainName
+		self.DomainId = DomainId
+		self.InScopeId = InScopeId
+		self.ProgramId = ProgramId
+
 # Quick dict for scope types
 ScopeTypes = {
 	1 : 'asns',
@@ -74,8 +85,6 @@ ScopeTypes = {
 # Parsing Tasks 
 
 Tasks = {
-	'Brutesubs': 
-		{ 'function': 'Brutesubs', 'type' : 'inScopeText' },
 	'Subfinder': 
 		{ 'function': 'Subfinder', 'type' : 'inScopeText' },
 	'Crtsh':

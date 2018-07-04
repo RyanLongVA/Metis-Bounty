@@ -13,3 +13,6 @@ wordlists/dns/*
 
 # New log
 log.txt
+
+# Quick SQL Output
+sql.temp

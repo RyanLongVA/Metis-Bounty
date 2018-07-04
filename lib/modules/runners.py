@@ -3,6 +3,10 @@ import pdb
 import models
 # The Tasks >> Consists of their runners 
 import InScopeTextTasks as InScopeTextTasks
+# Import the handy database strings
+import mysqlfunc
+# Importing the Rules
+import ProgramRules, GlobalRules
 
 ### Runners ###
 
@@ -34,7 +38,7 @@ class Manager:
 				self.Queue = []
 				for a in ReturningIds.ScopeIds:
 					self.Queue.append(models.InScope(a))
-	def Tick(self):
+	def Execute(self):
 		if self.Type == models.ScopeTypes[2]:
 			# InScopeText Tasks
 			for ScopeItem in self.Queue:				
@@ -70,3 +74,47 @@ class InScopeTaskWrapper:
 			print '[+] Executing Task:',a['function']
 			getattr(InScopeTextTasks, a['function'])(self.ScopeItem) 		
 		# Should do all the work, evne the parsing / sending
+
+class RulesEngineManager:
+	def __init__(self, initScopeInput):
+		self.RulesDomains = []
+		InScopeIds = []
+		if type(initScopeInput) == str:
+			# We look the assumed program name (currently) 
+			conn = mysqlfunc.create_dbConnection()
+			cur = conn.cursor()
+			InScopeIds = mysqlfunc.returnInScopeIds(cur, initScopeInput)
+		else: 
+			# We start based on the inScopeId
+			InScopeIds.append(initScopeInput)
+		# Use the InScopeId(s) to create the RulesDomain objects and append them to the list
+		for curId in InScopeIds: 
+			# Creation of the InScope
+			curIdObject = models.InScope(curId)
+			self.rulesDomainsByInScopeId(curIdObject)
+
+	def Execute(self):
+		for curRulesDomain in self.RulesDomains:
+			print '[+] Starting on',curRulesDomain
+			# Run Globals
+			GlobalRules.Global(curRulesDomain)
+			# Run Program depth rules 
+			#curProgramLevel = 
+			
+
+			
+
+
+	def rulesDomainsByInScopeId(self, InScopeObject):
+		# create the connection and return all the domains 
+		statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s"%(InScopeObject.InScopeId)
+		domainsSqlOut = mysqlfunc.sqlExeRet(statem)
+		for column in domainsSqlOut:
+			# Build the needed info 
+			cDomainName = column[0] 
+			cDomainId = int(column[1])
+			# Append to results a creation of the rulesDomains object 
+			self.RulesDomains.append(models.RulesDomain(cDomainName, cDomainId, InScopeObject.InScopeId, InScopeObject.ProgramId))
+
+	
+

@@ -4,7 +4,7 @@ from __future__ import division
 
 # Note: There are some statements that I ignored and kept in code // now they have to be included in that module
 
-import os, sys, pdb, subprocess, re string, argparse, time, socket, dns.resolver
+import os, sys, pdb, subprocess, re, string, argparse, time, socket, dns.resolver
 #Decorator for timing up functions
 from lib.modules import timeout
 #MySQL functions and database errors
@@ -314,9 +314,11 @@ def main():
     parser = argparse.ArgumentParser(description='databaseActions')
     
     parser.add_argument('-cd', action='store_true', help='"Program" Checks and rechecks domains from the program for DNS Records and deletes those that have disappeared')
-    parser.add_argument('-s', help='The scope of the current data')
+    parser.add_argument('-s', help='The scope of the current data "Yahoo" "Tesla" "All"')
     parser.add_argument('-t', help='Tasks seperated by comma "Brutesubs, Subfinder, Crtsh"')
     parser.add_argument('--asn', action='store_true', help='Use the Asns')
+    parser.add_argument('--sql', help="Execute statement and pipe the results to sql.temp")
+    parser.add_argument('--rules', help="Recalculate rules based on a Program Name or InScopeId")
     args = parser.parse_args()
     conn = mysqlfunc.create_dbConnection()
     curTest = conn.cursor()
@@ -324,7 +326,7 @@ def main():
     if args.s and args.t and not args.asn:
         # full logger
         CurrentQueue = runners.Manager(args.s, models.ScopeTypes[2], args.t)
-        CurrentQueue.Tick()
+        CurrentQueue.Execute()
 
     if args.cd:
         conn = mysqlfunc.create_dbConnection()
@@ -372,5 +374,10 @@ def main():
                 else: 
                     print "Input was not understood"
         mysqlfunc.removeDomainArray(fails1)  
+    if args.rules:
+        curRulesEngineManager = runners.RulesEngineManager(args.rules)
+        curRulesEngineManager.Execute()
+        print '[+] Finished'
+        pdb.set_trace()
 
 main()

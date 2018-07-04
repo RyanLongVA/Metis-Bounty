@@ -30,7 +30,15 @@ def sqlCommit(conn):
 
 # Only execute 
 def sqlExe(cur, statem):
+
     cur.execute(statem)
+
+# Execute return 
+def sqlExeRet(statem):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    cur.execute(statem)
+    return cur.fetchall()
 
 # Returns the domains based on the domainRangeId
 def domainsBydomainRangeId(id):
@@ -103,6 +111,8 @@ def returnAllDomains(cur):
         results.append(column[0])
     return results
 
+
+# Returns an Array of inScope Ids based onthe program
 def returnInScopeIds(cur, program):
     statem = "SELECT domainRangeId FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \"%s\")"%(program)
     results = []
