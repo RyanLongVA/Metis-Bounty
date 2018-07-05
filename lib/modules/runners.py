@@ -95,11 +95,16 @@ class RulesEngineManager:
 
 	def Execute(self):
 		for curRulesDomain in self.RulesDomains:
-			print '[+] Starting on',curRulesDomain
+			print '[+] Starting on',curRulesDomain.DomainName
 			# Run Globals
-			GlobalRules.Global(curRulesDomain)
-			# Run Program depth rules 
-			#curProgramLevel = 
+			curGlobalResults = GlobalRules.Global(curRulesDomain)
+			# Run Program depth rules
+			try:  
+				curProgramResults = getattr(ProgramRules, curRulesDomain.ProgramName)(curRulesDomain)
+			except Exception,e:
+				print '[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
+				curProgramResults = getattr(ProgramRules, curRulesDomain.ProgramName, default)
+			pdb.set_trace()
 			
 
 			

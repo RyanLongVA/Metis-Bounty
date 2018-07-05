@@ -1,40 +1,7 @@
-import pdb, MySQLdb, mysqlfunc
+import pdb, MySQLdb, mysqlfunc, logger
 from MySQLdb import Error 
 ###Summary:
-###General Paring before a insert
-
-
-def filterBlacklistedFromDomainList(domainArray, outScope):
-    try:
-    	pdb.set_trace()
-        #Domainlist >> brutesubs session
-        domainArray = filter(None, domainArray)
-    except:
-        pass
-    if domainArray == None:
-        #Empty domain list
-        a = []
-    else:
-        a = domainArray
-    #a is the domainlist
-    for b in outScope:
-        #Check outScope value
-
-        ###a will be only inscope
-        if (b[:2] == '*.'):
-            b = b[2:]
-            for integer, c in reversed(list(enumerate(a))):
-                # pdb.set_trace() 
-                if c.find(c) != -1:
-                    a.pop(integer)
-        else:
-            for integer, c in reversed(list(enumerate(a))):
-                if c == b:
-                    a.pop(integer)
-    #List of inScope domains that were found
-    #a is now a list of found InScope domains
-    pdb.set_trace()
-    return a
+###General Parsing 
 
 def returnDomainsByRangeId(conn, domainId):
 	#return all domains the current domain Id
@@ -62,8 +29,8 @@ def returnNewDomainsArrayInScopeObject(domainArray, InScopeObject):
     for a in cur.fetchall():
         currentDomains.append(a[0])
 
-    # Remove duplicates from the b  
-    for a in filter(None, domainArray.split('\n')):
+    # Remove duplicates from domainArray 
+    for a in domainArray:
         if a not in currentDomains and not a.startswith('.'):
             # It's definitely a unique domain
             currentUniques.append(a)
@@ -84,4 +51,13 @@ def returnNewDomainsArrayInScopeObject(domainArray, InScopeObject):
         pdb.set_trace()
     return currentUniques
 
-
+def InsertDomainWrapper(domainArray, InScopeId):
+    curInScope = models.InScope(InScopeId)
+    newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(redirectionArray, curInScope)
+    # Check Internet
+    if dnsCheck.checkInternet():
+        for domain in newDomains:
+            mysqlfunc.insertDomain(domain, InScopeId)
+    else: 
+        print '[-] Internet Check failed'
+        logger.logError('[-] Internet check failed: '+', '.join(newDomains))

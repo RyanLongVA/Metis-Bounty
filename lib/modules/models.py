@@ -75,6 +75,7 @@ class RulesDomain:
 		self.DomainId = DomainId
 		self.InScopeId = InScopeId
 		self.ProgramId = ProgramId
+		self.ProgramName = mysqlfunc.programNameByProgramId(ProgramId)
 
 # Quick dict for scope types
 ScopeTypes = {

@@ -3,3 +3,4 @@
 - Update check for tools >> maybe just a script
     - go get upgrade (subfinder)
 - Could make the rules engine initial based on a sole domain
+

@@ -1,4 +1,4 @@
-import models, pdb, MySQLdb, logger, subprocess, parsingSqlData, os, sys
+import models, pdb, MySQLdb, logger, subprocess, parsingSqlData, os, sys, dnsCheck
 import lib.modules.variables as variables
 import mysqlfunc
 
@@ -15,8 +15,13 @@ def Subfinder(InScopeObject):
 	try: 
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
 		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(domainsOutput, InScopeObject)
-		for domain in newDomains:
-			mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
+		# Check Internet
+		if dnsCheck.checkInternet():
+			for domain in newDomains:
+				mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
+		else: 
+			print '[-] Internet Check failed'
+			logger.logError('[-] Internet check failed: '+', '.join(newDomains))
 	
 	except OSError,e:
 		if e[0] == 2:

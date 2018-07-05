@@ -62,33 +62,31 @@ def insertDomain(domain, domainRangeId, title=None):
     conn = create_dbConnection()
     cur = conn.cursor()
     # checkInternet
-    if dnsCheck.checkInternet:
-        # Check resolvability of the site
-        if dnsCheck.checkHostByName(domain):
-            if title:
-                #Insert with title
-                #pdb catch in case something goes wrong 
-                try:
-                    statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, domainTitle, dateFound) VALUES (%s, \"%s\", \"%s\", CURDATE())"%(domainRangeId, domain, title)
-                    cur.execute(statem)
-                    print '[+] New Domain:',domain
-                    # Log the domain
-                    logger.logNewDomain(domain)
-                except Exception,e:
-                    print e 
-                    pdb.set_trace()
-            else:
-                #pdb catch in case something goes wrong  
-                try: 
-                    statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
-                    cur.execute(statem)
-                    print '[+] New Domain:',domain
-                    logger.logNewDomain(domain)
-                except Exception,e:
-                    print e 
-                    pdb.set_trace()
-            # Commit 
-            conn.commit()
+    if dnsCheck.checkHostByName(domain):
+        if title:
+            #Insert with title
+            #pdb catch in case something goes wrong 
+            try:
+                statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, domainTitle, dateFound) VALUES (%s, \"%s\", \"%s\", CURDATE())"%(domainRangeId, domain, title)
+                cur.execute(statem)
+                print '[+] New Domain:',domain
+                # Log the domain
+                logger.logNewDomain(domain)
+            except Exception,e:
+                print e 
+                pdb.set_trace()
+        else:
+            #pdb catch in case something goes wrong  
+            try: 
+                statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
+                cur.execute(statem)
+                print '[+] New Domain:',domain
+                logger.logNewDomain(domain)
+            except Exception,e:
+                print e 
+                pdb.set_trace()
+        # Commit 
+        conn.commit()
 
 def removeDomain(domain):
     conn = create_dbConnection()
@@ -121,14 +119,12 @@ def returnInScopeIds(cur, program):
         results.append(int(a[0]))
     return results
 
-# def programNameToInScopeIds(cur, cProgram):
-#     # Returns the domainRangeId's for a program
-#     statem = "SELECT `domainRangeId` FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \'%s\')"%(cProgram)
-#     cur.execute(statem)
-#     b = [] 
-#     for a in cur.fetchall():
-#         b.append(int(a[0]))
-#     return b
+def programNameByProgramId(programId):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    statem = "SELECT name from Programs WHERE programId = %s"%programId
+    cur.execute(statem)
+    return cur.fetchone()[0]
 
 def blacklistedByDomainRangeId(cur, id):
     statem = "SELECT blacklistedContent FROM BlacklistedDomains WHERE domainRangeId = %s"%str(id)
