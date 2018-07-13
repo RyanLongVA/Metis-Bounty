@@ -14,7 +14,7 @@ def Subfinder(InScopeObject):
 	subprocess.call(variables.goBin+'subfinder -d %s -o %s'%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)
 	try: 
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
-		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(domainsOutput, InScopeObject)
+		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)
 		# Check Internet
 		if dnsCheck.checkInternet():
 			for domain in newDomains:
@@ -44,7 +44,7 @@ def Amass(InScopeObject):
 	subprocess.call(variables.goBin+'amass -d %s -o %s '%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)	
 	try: 
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
-		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(domainsOutput, InScopeObject)
+		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)
 		for domain in newDomains:
 			mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
 	

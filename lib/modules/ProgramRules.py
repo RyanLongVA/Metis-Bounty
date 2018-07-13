@@ -1,10 +1,10 @@
 import requests, pdb
 
 #
-class blankClass:
+class BlankClass:
 	def __init__(self, curDomainRules):
 		self.Results = []
-		self.Score = []
+		self.Score = 0
 
 class Tesla:
 	def __init__(self, curDomainRules):

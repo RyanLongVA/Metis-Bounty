@@ -319,6 +319,7 @@ def main():
     parser.add_argument('--asn', action='store_true', help='Use the Asns')
     parser.add_argument('--sql', help="Execute statement and pipe the results to sql.temp")
     parser.add_argument('--rules', help="Recalculate rules based on a Program Name or InScopeId")
+    parser.add_argument('--domain', help="Calculate rules based on specific domain (great for testing)")
     args = parser.parse_args()
     conn = mysqlfunc.create_dbConnection()
     curTest = conn.cursor()
@@ -374,10 +375,14 @@ def main():
                 else: 
                     print "Input was not understood"
         mysqlfunc.removeDomainArray(fails1)  
-    if args.rules:
-        curRulesEngineManager = runners.RulesEngineManager(args.rules)
+    if args.rules and not args.domain:
+        curRulesEngineManager = runners.RulesEngineManager(initScopeInput = args.rules)
         curRulesEngineManager.Execute()
         print '[+] Finished'
-        pdb.set_trace()
-    print 'test'
+    elif args.rules == 'domain' and args.domain:
+        print '[+] Starting based on domain: '+args.domain
+        #It's supposedly domain specific
+        curRulesEngineManager = runners.RulesEngineManager(domain = args.domain)
+        curRulesEngineManager.Execute()
+        print '[+] Finished'
 main()

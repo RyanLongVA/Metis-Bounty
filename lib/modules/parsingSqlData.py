@@ -1,5 +1,6 @@
-import pdb, MySQLdb, mysqlfunc, logger
+import pdb, MySQLdb, mysqlfunc, logger, models, dnsCheck
 from MySQLdb import Error 
+
 ###Summary:
 ###General Parsing 
 
@@ -34,26 +35,18 @@ def returnNewDomainsArrayInScopeObject(domainArray, InScopeObject):
         if a not in currentDomains and not a.startswith('.'):
             # It's definitely a unique domain
             currentUniques.append(a)
-
     # Make sure they are all inScope        
     if InScopeObject.ScopeText.startswith("*."):
-        for domain in currentUniques:
-            # check if inscope
-            if domain.endswith(InScopeObject.ScopeText[2:]):
-                continue
-            else:
-                print '\n\n[-] Domain:' + domain
-                print 'Was not in: ' + InScopeObject.ScopeText 
-                pdb.set_trace()
+        trueUniques = [x for x in currentUniques if x.endswith(InScopeObject.ScopeText[2:])]
     else: 
-        print '[-] Scope did not start with *.'
+        trueUniques = []
+        print '\t[-] Scope did not start with *.'
         print InScopeObject.ScopeText
-        pdb.set_trace()
-    return currentUniques
+    return trueUniques
 
 def InsertDomainWrapper(domainArray, InScopeId):
     curInScope = models.InScope(InScopeId)
-    newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(redirectionArray, curInScope)
+    newDomains = returnNewDomainsArrayInScopeObject(domainArray, curInScope)
     # Check Internet
     if dnsCheck.checkInternet():
         for domain in newDomains:

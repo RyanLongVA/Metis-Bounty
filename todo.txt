@@ -4,3 +4,6 @@
     - go get upgrade (subfinder)
 - Could make the rules engine initial based on a sole domain
 
+Revisions:
+	- Add double checking on -cd
+	- Need to finish crtsh

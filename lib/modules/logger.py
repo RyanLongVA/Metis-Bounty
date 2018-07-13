@@ -3,6 +3,7 @@ import os
 
 logFile = 'log.txt'
 errorLogFile = 'errorLog.txt'
+interestingLogFile = 'interestingLog.txt'
 
 def logNewDomain(domainName):
 	# Trim if too long
@@ -47,4 +48,9 @@ def logError(text):
 		#Write the remaining
 		f = open(errorLogFile, 'w')
 		f.writelines(output)
+		f.close()
+
+def logInteresting(text):
+		f=open(interestingLogFile, 'a+')
+		f.write(text+'\n')
 		f.close()

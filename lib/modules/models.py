@@ -72,9 +72,9 @@ class RulesDomain:
 
 	def __init__(self, DomainName, DomainId, InScopeId, ProgramId):
 		self.DomainName = DomainName
-		self.DomainId = DomainId
-		self.InScopeId = InScopeId
-		self.ProgramId = ProgramId
+		self.DomainId = int(DomainId)
+		self.InScopeId = int(InScopeId)
+		self.ProgramId = int(ProgramId)
 		self.ProgramName = mysqlfunc.programNameByProgramId(ProgramId)
 
 # Quick dict for scope types

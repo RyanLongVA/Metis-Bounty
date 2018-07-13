@@ -1,6 +1,6 @@
 -- Revamped Database Layout Creation
 -- MySQL
-CREATE DATABASE bounties2;
+CREATE DATABASE bountiesDev;
 USE bounties2;
  
 
@@ -93,3 +93,13 @@ CREATE TABLE cnameIps (
 CREATE TABLE cnameIgnores (
        scope text NOT NULL
 );
+
+
+-- Stored Procedure: UpdatingAudit
+
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `UpdateAudit`(`cDomainName` VARCHAR(100), `cAuditScore` INT(11))
+BEGIN
+    UPDATE Domains SET DateAudited = CURRENT_DATE, AuditScore = `cAuditScore` WHERE DomainName = `cDomainName`;  
+END$$
+DELIMITER ;

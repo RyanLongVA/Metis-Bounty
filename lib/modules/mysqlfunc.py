@@ -20,7 +20,8 @@ def create_dbConnection():
         print(e)
     return None
 
-def sqlExeCommit(conn, statem):
+def sqlExeCommit(statem):
+    conn = create_dbConnection()
     cur = conn.cursor()
     cur.execute(statem)
     conn.commit()
