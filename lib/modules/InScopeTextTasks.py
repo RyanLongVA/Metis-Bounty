@@ -11,7 +11,7 @@ def Subfinder(InScopeObject):
 	outputFileLoc = variables.tempFolder+'subfinder.temp'
 	# Remove the files between 
 	subprocess.call('rm '+outputFileLoc, shell=True)
-	subprocess.call(variables.goBin+'subfinder -d %s -o %s'%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)
+	subprocess.call(variables.goBin+'subfinder -d %s -o %s > /dev/null'%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)
 	try: 
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
 		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)
@@ -41,7 +41,7 @@ def Amass(InScopeObject):
 	outputFileLoc = variables.tempFolder+'amass.temp'
 	# Remove the files between 
 	subprocess.call('rm '+outputFileLoc, shell=True)
-	subprocess.call(variables.goBin+'amass -d %s -o %s '%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)	
+	subprocess.call(variables.goBin+'amass -d %s -o %s /dev/null'%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)	
 	try: 
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
 		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)

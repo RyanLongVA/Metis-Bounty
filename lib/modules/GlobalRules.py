@@ -16,13 +16,13 @@ class Global:
 	def RequestsReponseWrap(self, curDomainRules):
 		# Https
 		try:
-			resHttps = requests.get('https://'+curDomainRules.DomainName, timeout=3)
+			resHttps = requests.get('https://'+curDomainRules.DomainName, timeout=2)
 		except Exception,e:
 			resHttps = None # Most likely Connection/Error
 			pass
 		# Http
 		try: 
-			resHttp = requests.get('http://'+curDomainRules.DomainName, timeout=3)
+			resHttp = requests.get('http://'+curDomainRules.DomainName, timeout=2)
 		except Exception,e:
 			resHttp = None
 		Global.__Redirection__(self, curDomainRules, resHttp, resHttps)

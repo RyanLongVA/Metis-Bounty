@@ -76,8 +76,9 @@ class InScopeTaskWrapper:
 		# Should do all the work, evne the parsing / sending
 
 class RulesEngineManager:
-	def __init__(self, initScopeInput = None, domain = None):
+	def __init__(self, initScopeInput = None, domain = None, OnlyNotCalculated = None):
 		self.RulesDomains = []
+		self.OnlyNotCalculated = OnlyNotCalculated
 		if domain:
 			# start based on domain
 			self.rulesDomainByDomain(domain)
@@ -121,7 +122,10 @@ class RulesEngineManager:
 			mysqlfunc.sqlExeCommit(statem)		
 
 	def rulesDomainByDomain(self, domain):
-		statem = "SELECT domainName, domainId, domainRangeId FROM Domains WHERE domainName = \'%s\'"%domain
+		if self.OnlyNotCalculated:
+			statem = "SELECT domainName, domainId, domainRangeId FROM Domains WHERE domainName = \'%s\' AND RulesScore IS NULL"%domain
+		else:
+			statem = "SELECT domainName, domainId, domainRangeId FROM Domains WHERE domainName = \'%s\'"%domain
 		result = mysqlfunc.sqlExeRet(statem)
 		if len(result) != 1:
 			print '  [-] Odd results or no results'
@@ -138,7 +142,10 @@ class RulesEngineManager:
 
 	def rulesDomainsByInScopeId(self, InScopeObject):
 		# create the connection and return all the domains 
-		statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s"%(InScopeObject.InScopeId)
+		if self.OnlyNotCalculated:
+			statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s AND RulesScore IS NULL"%(InScopeObject.InScopeId)
+		else:	
+			statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s"%(InScopeObject.InScopeId)
 		domainsSqlOut = mysqlfunc.sqlExeRet(statem)
 		for column in domainsSqlOut:
 			# Build the needed info 

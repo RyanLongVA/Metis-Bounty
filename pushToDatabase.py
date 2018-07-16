@@ -318,8 +318,10 @@ def main():
     parser.add_argument('-t', help='Tasks seperated by comma "Brutesubs, Subfinder, Crtsh"')
     parser.add_argument('--asn', action='store_true', help='Use the Asns')
     parser.add_argument('--sql', help="Execute statement and pipe the results to sql.temp")
-    parser.add_argument('--rules', help="Recalculate rules based on a Program Name or InScopeId")
+    parser.add_argument('--rules', help="Recalculate rules based on a Program Name or InScopeId or domain (specify in --domain)")
+    parser.add_argument('--notCalculated', action='store_true', help="On type for rules calculation e.g. null")
     parser.add_argument('--domain', help="Calculate rules based on specific domain (great for testing)")
+    parser.add_argument('--cleanup', help="Supply a program or domainRangeId... well see if anything slipped in")
     args = parser.parse_args()
     conn = mysqlfunc.create_dbConnection()
     curTest = conn.cursor()
@@ -330,59 +332,66 @@ def main():
         CurrentQueue.Execute()
 
     if args.cd:
-        conn = mysqlfunc.create_dbConnection()
-        cur = conn.cursor()
-        domainsList = filter(None, mysqlfunc.returnAllDomains(cur))        
-        fails1 = []
-        try:
-            socket.gethostbyname('google.com')
-        except:
-            print 'Internet connect failed'
-            exit()
-        for domain in domainsList:
-            try: 
-                b = socket.gethostbyname(domain)
-            except Exception,e:
-                if e[0] == -2:
-                    fails1.append(domain)
-                    print '[-] Failed: '+domain
-                    continue
-                else: 
-                    print e 
-                    exit()
-            if b == '192.168.0.1':
-                print '[-] Failed (locally?): '+domain
-                fails1.append(domain)
+            conn = mysqlfunc.create_dbConnection()
+            cur = conn.cursor()
+            if not args.s:
+                domainsList = filter(None, mysqlfunc.returnAllDomains(cur))        
             else:
-                pass
-        c = int(str(len(fails1)) + '00')
-        d = len(domainsList)
-        e = c / d 
-        f = 5
-        if e > f:
-            for a in fails1:
-                print a
-            print '\nPercentage: '+str(e)+'%'
-            print 'Fails Length: '+str(c)
-            print 'Total Length: '+str(d)
-            print 'More than '+str(f)+' percent failed\n\nDo you wish to continue?'
-            while True:
-                g = raw_input('(seriouslyYes/no) ')
-                if g == 'seriouslyYes':
-                    break
-                elif g == 'no':
-                    exit()
-                else: 
-                    print "Input was not understood"
-        mysqlfunc.removeDomainArray(fails1)  
+                domainsList = []
+                inScopeIdList = mysqlfunc.returnInScopeIds(cur, args.s)
+                for item in inScopeIdList:
+                    domainsList += mysqlfunc.domainsBydomainRangeId(item)                    
+            fails1 = []
+            try:
+                socket.gethostbyname('google.com')
+            except:
+                print 'Internet connect failed'
+                exit()
+            for domain in domainsList:
+                try: 
+                    b = socket.gethostbyname(domain)
+                except Exception,e:
+                    if e[0] == -2:
+                        fails1.append(domain)
+                        print '[-] Failed: '+domain
+                        continue
+                    else: 
+                        print e 
+                        exit()
+                if b == '192.168.0.1':
+                    print '[-] Failed (locally?): '+domain
+                    fails1.append(domain)
+                else:
+                    pass
+            c = int(str(len(fails1)) + '00')
+            d = len(domainsList)
+            e = c / d 
+            f = 5
+            if e > f:
+                for a in fails1:
+                    print a
+                print '\nPercentage: '+str(e)+'%'
+                print 'Fails Length: '+str(c)
+                print 'Total Length: '+str(d)
+                print 'More than '+str(f)+' percent failed\n\nDo you wish to continue?'
+                while True:
+                    g = raw_input('(seriouslyYes/no) ')
+                    if g == 'seriouslyYes':
+                        break
+                    elif g == 'no':
+                        exit()
+                    else: 
+                        print "Input was not understood"
+            mysqlfunc.removeDomainArray(fails1)
+
     if args.rules and not args.domain:
-        curRulesEngineManager = runners.RulesEngineManager(initScopeInput = args.rules)
+        curRulesEngineManager = runners.RulesEngineManager(initScopeInput = args.rules, OnlyNotCalculated = args.notCalculated)
         curRulesEngineManager.Execute()
         print '[+] Finished'
     elif args.rules == 'domain' and args.domain:
         print '[+] Starting based on domain: '+args.domain
         #It's supposedly domain specific
-        curRulesEngineManager = runners.RulesEngineManager(domain = args.domain)
+        curRulesEngineManager = runners.RulesEngineManager(domain = args.domain, OnlyNotCalculated = args.notCalculated)
         curRulesEngineManager.Execute()
         print '[+] Finished'
 main()
