@@ -110,21 +110,22 @@
         echo "</tr>";
           
         // The form
-        echo "<form id='rowSubmit'>";
+        
         while($row = $resultSet->fetch_assoc()) {
-          echo "<tr class='z-depth-1 dataRow'>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='domainName' value='" . $row['domainName'] . "'/> ". $row['domainName'] . " </td>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='dateFound' value='" . $row['dateFound'] . "'/> " . $row['dateFound'] . " </td>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='RulesGlobal' value='" . $row['RulesGlobal'] . "'/>" . $row['RulesGlobal'] . " </td>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='RulesProgram' value='" . $row['RulesProgram'] . "'/> " . $row['RulesProgram'] . " </td>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='DateAudited' value='" . $row['DateAudited'] . "'/> ". $row['DateAudited'] ." </td>";
-          echo "<td class='dataBox'>"."<input type='text' name='AuditScore' value='" . $row['AuditScore'] . "'/> </td>";
-          echo "<td class='dataBox'>"."<input type='hidden' name='RulesScore' value='" . $row['RulesScore'] . "'/> " . $row['RulesScore'] . " </td>";
-          echo "<td class='dataBox'>" . "<input type='submit' name ='update'" . " </td>";
-          echo "<input type='hidden' name='domainId'/>";
-          echo "</tr>";
+          echo "<form id='domain-" . $row['domainId'] . "' class='rowSubmit'>";
+            echo "<tr class='z-depth-1 dataRow'>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='domainName' value='" . $row['domainName'] . "'/> ". $row['domainName'] . " </td>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='dateFound' value='" . $row['dateFound'] . "'/> " . $row['dateFound'] . " </td>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='RulesGlobal' value='" . $row['RulesGlobal'] . "'/>" . $row['RulesGlobal'] . " </td>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='RulesProgram' value='" . $row['RulesProgram'] . "'/> " . $row['RulesProgram'] . " </td>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='DateAudited' value='" . $row['DateAudited'] . "'/> ". $row['DateAudited'] ." </td>";
+              echo "<td class='dataBox'>"."<input type='text' name='AuditScore' autocomplete='off' value='" . $row['AuditScore'] . "'/> </td>";
+              echo "<td class='dataBox'>"."<input type='hidden' name='RulesScore' value='" . $row['RulesScore'] . "'/> " . $row['RulesScore'] . " </td>";
+              echo "<td class='dataBox'>" . "<input type='submit' name ='update'" . " </td>";
+            echo "</tr>";
+          echo "</form>";
         }
-        echo "</form>";
+        
         echo "</table>";
         echo $SqlStatem;
         ?>
