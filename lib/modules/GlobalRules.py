@@ -28,43 +28,6 @@ class Global:
 		Global.__Redirection__(self, curDomainRules, resHttp, resHttps)
 		Global.__ResponseExistence__(self, resHttp, resHttps)
 
-
-	# def __RedirectionByMetaTag__(self, curDomainRules, resHttps, resHttp):
-	# 	# The idea is to check if all the available responses are cut by metadata
-	# 	AllMetaRedirects = False
-	# 	MetaRedirects = []
-	# 	for a in filter(None, [resHttps, resHttp]):
-	# 		soup = BeautifulSoup.BeautifulSoup(a.text)
-	# 		result = soup.find("meta", attrs={"http-equiv":"refresh"})
-	# 		print result
-	# 		if result:
-	# 			wait,text=result["content"].split(";")
-	# 			if text.strip().lower().startswith("url="):
-	# 				# it redirects
-	# 				MetaRedirects.append(str(urlparse(text[4:]).netloc))
-	# 				AllMetaRedirects = True
-	# 			else:
-	# 				# This http-equiv refresh tag is mostly not a redirect
-	# 				print "Odd meta http-equiv refresh tag from: "+a.url+" \t Tag: "+result
-	# 				logger.logInteresting("Odd meta http-equiv refresh tag from: "+a.url+" \t Tag: "+result)
-	# 				AllMetaRedirects = False
-	# 				break
-	# 		else:
-	# 			# No meta refresh
-	# 			AllMetaRedirects = False
-	# 			break
-	# 	if len(MetaRedirects) != 0:
-	# 		curInScope = models.InScope(curDomainRules.InScopeId)
-	# 		parsingSqlData.InsertDomainWrapper(MetaRedirects, curInScope.InScopeId)
-
-	# 	if AllMetaRedirects == False:
-	# 		return
-	# 	else: 
-	# 		# Add to score and results
-	# 		self.Score += -100
-	# 		self.Results.append('RedirectionByMetaTag')
-	
-
 	def __Redirection__(self, curDomainRules, resHttp, resHttps):
 		if resHttp:
 			if len(resHttp.history) != 0:
