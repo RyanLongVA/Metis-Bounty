@@ -7,6 +7,8 @@ import InScopeTextTasks as InScopeTextTasks
 import mysqlfunc
 # Importing the Rules
 import ProgramRules, GlobalRules
+# Multithreading
+from multiprocessing.dummy import Pool as ThreadPool
 
 ### Runners ###
 
@@ -99,16 +101,44 @@ class RulesEngineManager:
 				self.rulesDomainsByInScopeId(curIdObject)
 
 	def Execute(self):
-		for curRulesDomain in self.RulesDomains:
-			print '[+] Starting on',curRulesDomain.DomainName
+		# Pop off the top and rerun 
+		pool = ThreadPool(100)
+		pool.map(RulesEngineManager.RulesWrapping, self.RulesDomains)
+		# for curRulesDomain in self.RulesDomains:
+			# starting threading 
+
+			# print '[+] Starting on',curRulesDomain.DomainName
+			# # Run Globals
+			# curGlobalResults = GlobalRules.Global(curRulesDomain)
+			# # Run Program depth rules
+			# if hasattr(ProgramRules, curRulesDomain.ProgramName):
+			# 	curProgramResults = getattr(ProgramRules, curRulesDomain.ProgramName)(curRulesDomain)
+			# else:
+			# 	print '\t[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
+			# 	curProgramResults = getattr(ProgramRules, 'BlankClass')(curRulesDomain)
+
+			# # Set vars: Combine score, Global.Results, Program.Results
+			# CombinedScore = curGlobalResults.Score + curProgramResults.Score
+			# # Update in database 
+			# print '\t RulesScore: %s'%CombinedScore
+			# print '\t Global: %s'%','.join(curGlobalResults.Results)
+			# print '\t Program: %s'%','.join(curProgramResults.Results)
+			# print ''
+			# statem = "UPDATE Domains SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), curRulesDomain.DomainId)
+			
+			# mysqlfunc.sqlExeCommit(statem)
+	@staticmethod
+	def RulesWrapping(rulesDomain):
+			print '[+] Starting on',rulesDomain.DomainName
 			# Run Globals
-			curGlobalResults = GlobalRules.Global(curRulesDomain)
+			curGlobalResults = GlobalRules.Global(rulesDomain)
 			# Run Program depth rules
-			if hasattr(ProgramRules, curRulesDomain.ProgramName):
-				curProgramResults = getattr(ProgramRules, curRulesDomain.ProgramName)(curRulesDomain)
+			if hasattr(ProgramRules, rulesDomain.ProgramName):
+				curProgramResults = getattr(ProgramRules, rulesDomain.ProgramName)(rulesDomain)
 			else:
 				print '\t[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
-				curProgramResults = getattr(ProgramRules, 'BlankClass')(curRulesDomain)
+				# Set as BlankClass so stats don't break
+				curProgramResults = getattr(ProgramRules, 'BlankClass')(rulesDomain)
 
 			# Set vars: Combine score, Global.Results, Program.Results
 			CombinedScore = curGlobalResults.Score + curProgramResults.Score
@@ -117,9 +147,8 @@ class RulesEngineManager:
 			print '\t Global: %s'%','.join(curGlobalResults.Results)
 			print '\t Program: %s'%','.join(curProgramResults.Results)
 			print ''
-			statem = "UPDATE Domains SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), curRulesDomain.DomainId)
-			
-			mysqlfunc.sqlExeCommit(statem)		
+			statem = "UPDATE Domains SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), rulesDomain.DomainId)
+			mysqlfunc.sqlExeCommit(statem)
 
 	def rulesDomainByDomain(self, domain):
 		if self.OnlyNotCalculated:
