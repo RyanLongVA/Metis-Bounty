@@ -41,16 +41,41 @@ def sqlExeRet(statem):
     cur.execute(statem)
     return cur.fetchall()
 
+def sqlExeRetOne(statem):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    cur.execute(statem)
+    return cur.fetchone()
+
 # Returns the domains based on the domainRangeId
 def domainsBydomainRangeId(id):
     conn = create_dbConnection()
     cur = conn.cursor()
-    statem = "SELECT  domainName FROM Domains WHERE domainRangeId = %s"%str(id)
+    statem = "SELECT domainName FROM Domains WHERE domainRangeId = %s"%str(id)
     cur.execute(statem)
     results = []
     for column in cur.fetchall():
         results.append(column[0])
     return results
+
+# Returns the domains based on the domainRangeId
+def domainIdsBydomainRangeId(id):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    statem = "SELECT domainId FROM Domains WHERE domainRangeId = %s"%str(id)
+    cur.execute(statem)
+    results = []
+    for column in cur.fetchall():
+        results.append(int(column[0]))
+    return results
+
+# Returns the domains based on the domainRangeId
+def domainNameByDomainId(id):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    statem = "SELECT domainName FROM Domains WHERE domainId = %s"%str(id)
+    cur.execute(statem)
+    return cur.fetchone()[0]
 
 # Return the domainRange value associated with the rangeId
 def domainRangeByrangeId(cur, id):
@@ -58,34 +83,36 @@ def domainRangeByrangeId(cur, id):
     cur.execute(statem)
     return cur.fetchone()[0]
 
+# Return all scope Ids
+def AllScopeIds(self):
+        conn = mysqlfunc.create_dbConnection()
+        cur = conn.cursor()
+        # Saving the programI
+        ScopeIds = []
+        # Grab all the InScopeIds based on the programName
+        statem = "SELECT domainRangeId FROM InScope"
+        cur.execute(statem)
+        for column in cur.fetchall():
+            ScopeIds.append(int(column[0]))
+        return ScopeIds
+
 #Good for iterates on own commit
-def insertDomain(domain, domainRangeId, title=None):
+def insertDomain(domain, domainRangeId):
     conn = create_dbConnection()
     cur = conn.cursor()
     # checkInternet
     if dnsCheck.checkHostByName(domain):
-        if title:
-            #Insert with title
-            #pdb catch in case something goes wrong 
-            try:
-                statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, domainTitle, dateFound) VALUES (%s, \"%s\", \"%s\", CURDATE())"%(domainRangeId, domain, title)
-                cur.execute(statem)
-                print '[+] New Domain:',domain
-                # Log the domain
-                logger.logNewDomain(domain)
-            except Exception,e:
-                print e 
-                pdb.set_trace()
-        else:
-            #pdb catch in case something goes wrong  
-            try: 
-                statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
-                cur.execute(statem)
-                print '[+] New Domain:',domain
-                logger.logNewDomain(domain)
-            except Exception,e:
-                print e 
-                pdb.set_trace()
+        # pdb catch in case something goes wrong  
+        # Find ips
+        try: 
+            # Insert into Domains 
+            statem = "INSERT IGNORE INTO Domains(domainRangeId, domainName, dateFound) VALUES (%s, \"%s\", CURDATE())"%(domainRangeId, domain)
+            cur.execute(statem)
+            print '[+] New Domain:',domain
+            logger.logNewDomain(domain)
+        except Exception,e:
+            print e 
+            pdb.set_trace()
         # Commit 
         conn.commit()
 
@@ -99,6 +126,7 @@ def removeDomainArray(domainArray):
     conn = create_dbConnection()
     cur = conn.cursor()
     for domain in domainArray:
+        cur.execute('DELETE FROM Ips WHERE domainId = (SELECT domainId FROM Domains where domainName = \'%s\')'%(domain))
         cur.execute('DELETE FROM Domains WHERE domainName like \'%s\''%(domain))
     conn.commit()
 
@@ -112,7 +140,10 @@ def returnAllDomains(cur):
 
 
 # Returns an Array of inScope Ids based onthe program
-def returnInScopeIds(cur, program):
+# oldName: returnInScopeIds
+def InScopeIdsByProgramName(program):
+    conn = create_dbConnection()
+    cur = conn.cursor()
     statem = "SELECT domainRangeId FROM InScope WHERE programId = (SELECT programId FROM Programs WHERE name = \"%s\")"%(program)
     results = []
     cur.execute(statem)
@@ -124,6 +155,13 @@ def programNameByProgramId(programId):
     conn = create_dbConnection()
     cur = conn.cursor()
     statem = "SELECT name from Programs WHERE programId = %s"%programId
+    cur.execute(statem)
+    return cur.fetchone()[0]
+
+def ProgramIdByProgramName(programName):
+    conn = create_dbConnection()
+    cur = conn.cursor()
+    statem = "SELECT programId from Programs WHERE Programs = %s"%programId
     cur.execute(statem)
     return cur.fetchone()[0]
 

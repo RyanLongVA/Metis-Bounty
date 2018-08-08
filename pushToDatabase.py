@@ -320,11 +320,21 @@ def main():
     parser.add_argument('--sql', help="Execute statement and pipe the results to sql.temp")
     parser.add_argument('--rules', help="Recalculate rules based on a Program Name or InScopeId or domain (specify in --domain)")
     parser.add_argument('--notCalculated', action='store_true', help="On type for rules calculation e.g. null")
-    parser.add_argument('--domain', help="Calculate rules based on specific domain (great for testing)")
     parser.add_argument('--cleanup', help="Supply a program or domainRangeId... well see if anything slipped in")
+    # Tasks
+    parser.add_argument('--checkDNSFromDomains', action="store_true", help="From the Domains table perspective find the ips")
+    parser.add_argument('--checkDomainResolveFromIps', action="store_true", help="From the Ips table find the domains")
+    # Scope types
+    parser.add_argument('--program', help="Scopetype: On Program")
+    parser.add_argument('--programId', help="Scopetype: On ProgramId")
+    parser.add_argument('--ip', help="Scopetype: On Ip")
+    parser.add_argument('--domainRangeId', help="Scopetype: On domainRangeId")
+    parser.add_argument('--domain', help="Scopetype: On Domain")
+    parser.add_argument('--domainId', help="Scopetype: On domainId")
+
     args = parser.parse_args()
     conn = mysqlfunc.create_dbConnection()
-    curTest = conn.cursor()
+    cur = conn.cursor()
 
     if args.s and args.t and not args.asn:
         # full logger
@@ -388,10 +398,30 @@ def main():
         curRulesEngineManager = runners.RulesEngineManager(initScopeInput = args.rules, OnlyNotCalculated = args.notCalculated)
         curRulesEngineManager.Execute()
         print '[+] Finished'
-    elif args.rules == 'domain' and args.domain:
+    if args.rules == 'domain' and args.domain:
         print '[+] Starting based on domain: '+args.domain
         #It's supposedly domain specific
         curRulesEngineManager = runners.RulesEngineManager(domain = args.domain, OnlyNotCalculated = args.notCalculated)
         curRulesEngineManager.Execute()
         print '[+] Finished'
+    if args.checkDNSFromDomains:
+        # Checking if 
+        print '\t[+] Task Selected: CheckDnsFromDomains'
+        if args.program:
+            DnsResolveTool = runners.DomainResolve(args.program)
+            DnsResolveTool.DomainsCheck()
+
+
+        #elif args.ip:
+
+        #elif args.domainRangeId:
+
+        #elif args.domain
+    if args.checkDomainResolveFromIps:
+        print '\t[+] Task Selected: CheckDomainResolveFromIps'
+        if args.program:
+            ResolveChecker = runners.CheckDomainResolveFromIps(program = args.program)
+            ResolveChecker.Execute()
+
+
 main()

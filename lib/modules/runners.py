@@ -34,11 +34,11 @@ class Manager:
 		except ValueError:
 			if type(scope) == str:
 				if scope == 'All':
-					ReturningIds = models.InScopeIdsByAll()
+					ReturningIds = mysqlfunc.InScopeIdsByAll()
 				else:
-					ReturningIds = models.InScopeIdsByProgram(scope) 
+					ReturningIds = mysqlfunc.InScopeIdsByProgramName(scope) 
 				self.Queue = []
-				for a in ReturningIds.ScopeIds:
+				for a in ReturningIds:
 					self.Queue.append(models.InScope(a))
 	def Execute(self):
 		if self.Type == models.ScopeTypes[2]:
@@ -90,7 +90,7 @@ class RulesEngineManager:
 				# We look the assumed program name (currently) 
 				conn = mysqlfunc.create_dbConnection()
 				cur = conn.cursor()
-				InScopeIds = mysqlfunc.returnInScopeIds(cur, initScopeInput)
+				InScopeIds = mysqlfunc.InScopeIdsByProgramName(initScopeInput)
 			else: 
 				# We start based on the inScopeId
 				InScopeIds.append(initScopeInput)
@@ -101,32 +101,10 @@ class RulesEngineManager:
 				self.rulesDomainsByInScopeId(curIdObject)
 
 	def Execute(self):
-		# Pop off the top and rerun 
-		pool = ThreadPool(100)
+		# Pool and multithread
+		pool = ThreadPool(50)
 		pool.map(RulesEngineManager.RulesWrapping, self.RulesDomains)
-		# for curRulesDomain in self.RulesDomains:
-			# starting threading 
 
-			# print '[+] Starting on',curRulesDomain.DomainName
-			# # Run Globals
-			# curGlobalResults = GlobalRules.Global(curRulesDomain)
-			# # Run Program depth rules
-			# if hasattr(ProgramRules, curRulesDomain.ProgramName):
-			# 	curProgramResults = getattr(ProgramRules, curRulesDomain.ProgramName)(curRulesDomain)
-			# else:
-			# 	print '\t[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
-			# 	curProgramResults = getattr(ProgramRules, 'BlankClass')(curRulesDomain)
-
-			# # Set vars: Combine score, Global.Results, Program.Results
-			# CombinedScore = curGlobalResults.Score + curProgramResults.Score
-			# # Update in database 
-			# print '\t RulesScore: %s'%CombinedScore
-			# print '\t Global: %s'%','.join(curGlobalResults.Results)
-			# print '\t Program: %s'%','.join(curProgramResults.Results)
-			# print ''
-			# statem = "UPDATE Domains SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), curRulesDomain.DomainId)
-			
-			# mysqlfunc.sqlExeCommit(statem)
 	@staticmethod
 	def RulesWrapping(rulesDomain):
 			print '[+] Starting on',rulesDomain.DomainName
@@ -183,5 +161,75 @@ class RulesEngineManager:
 			# Append to results a creation of the rulesDomains object 
 			self.RulesDomains.append(models.RulesDomain(cDomainName, cDomainId, InScopeObject.InScopeId, InScopeObject.ProgramId))
 
-	
+# Checking Ips
+class DomainResolve:
+	def __init__(self, program = None, ip = None, domainRangeId = None, domain = None):
+		if program:
+			# self.ipsObjects = []
+			self.domainObjects = []
+
+			# Return on Scope ids
+			scopes = mysqlfunc.InScopeIdsByProgramName(program)
+			if len(scopes) is 0:
+				print '[-] No domainRangeIds in:', program
+				print '[-] Exiting'
+				exit()
+			# Get all of the domains
+			domainIds = [] 
+			for a in scopes:
+				domainIds += mysqlfunc.domainIdsBydomainRangeId(a)
+
+			for a in domainIds:
+				domainSqlData = mysqlfunc.sqlExeRetOne('SELECT domainId, domainName, domainRangeId from Domains where domainId = %s'%a)
+				self.domainObjects.append(models.Domain(domainSqlData[0], domainSqlData[1], domainSqlData[2]))
+			
+			# Insert new Ips record 
+			# 	INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ((select domainId from Domains where domainName = 'flicker.com'), '212.82.102.24', now(), now())
+	def DomainsCheck(self):
+		for a in self.domainObjects:
+			a.GrabIps()
+			# Check that they exist in sql
+			print '[*]',a.DomainName,':',','.join(a.Ips)
+			for b in a.Ips:
+				if b is '0.0.0.0':
+					continue
+				if not mysqlfunc.sqlExeRetOne("select domainId from Ips where ipAddress = \'"+b+"\' and domainId = "+str(a.DomainId)):
+					# The pair doesn't exist
+					mysqlfunc.sqlExeCommit("INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ("+str(a.DomainId)+", \'"+b+"\', now(), now())")
+
+class CheckDomainResolveFromIps:
+	def __init__(self, program = None, ip = None, domainRangeId = None, domain = None):
+		if program:
+			# self.ipsObjects = []
+			self.ipObjects = []
+
+			# Return on Scope ids
+			scopes = mysqlfunc.InScopeIdsByProgramName(program)
+			if len(scopes) is 0:
+				print '[-] No domainRangeIds in:', program
+				print '[-] Exiting'
+				exit()
+			# Get all of the domains
+			domainIds = [] 
+			for a in scopes:
+				domainIds += mysqlfunc.domainIdsBydomainRangeId(a)
+			ipSql = mysqlfunc.sqlExeRet('SELECT distinct ipAddress from Ips where domainId IN ('+','.join(str(x) for x in domainIds)+')')
+			for a in ipSql:
+				self.ipObjects.append(models.Ip(a[0]))
+	def Execute(self):
+		for a in self.ipObjects:
+			a.GrabDomains()
+		# Breaking up the functions so there's no environment for race conditions
+		for a in self.ipObjects:
+			a.ReverseResolve()
+
+
+
+
+
+
+
+					
+
+
 

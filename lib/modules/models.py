@@ -1,28 +1,13 @@
 ### Models ###
 
-import sys
+import sys, socket
 import MySQLdb, pdb
 from MySQLdb import Error
 import mysqlfunc 
 
 
 # All the variables for paths
-
-class InScopeIdsByAll:
-	def __init__(self):
-		conn = mysqlfunc.create_dbConnection()
-		cur = conn.cursor()
-		# Saving the programI
-		self.ScopeIds = []
-		# Grab all the InScopeIds based on the programName
-		statem = "SELECT domainRangeId FROM InScope"
-		cur.execute(statem)
-		for column in cur.fetchall():
-			self.ScopeIds.append(int(column[0]))
-		if len(self.ScopeIds) is 0:
-			print '[-] There were no domainRangeIds in InScope'
-			print '[-] Exiting'
-			exit()
+	
 
 class InScopeIdsByProgram:
 	def __init__(self, programName):
@@ -64,6 +49,48 @@ class InScope:
 			print '[-] The provided InScopeId {{',InScopeId,'}} was not a int'
 			print '[-] Exiting...'
 			exit()
+
+class Ip:
+	def __init__(self, ip):
+		# Populate data on if a something supplied
+		self.Ip = ip
+		self.DomainIds = []
+		self.TcpPorts =  []
+		self.UdpPorts = []
+
+	def GrabDomains(self):
+		idsSql = mysqlfunc.sqlExeRet('SELECT domainId from Ips WHERE ipAddress = \'%s\''%(self.Ip))
+		for x in idsSql:
+			self.DomainIds.append(int(x[0]))
+
+	def ReverseResolve(self):	
+		for a in self.DomainIds:
+			resolveable = False
+			# always deletes
+			for b in socket.gethostbyname_ex(mysqlfunc.domainNameByDomainId(a))[2]:
+				if b == self.Ip:
+					resolveable = True
+			if not resolveable:
+				print "[-] Deleting correlation between Ip: %s and domainId: %s"%(self.Ip, a)
+				mysqlfunc.sqlExeCommit('DELETE FROM Ips where ipAddress = \'%s\' and domainId = %s'%(self.Ip, a))
+
+		
+			
+class Domain:
+	def __init__(self, domainId, domainName, domainRangeId):
+		self.DomainName = domainName
+		self.DomainRangeId = domainRangeId
+		self.DomainId = domainId
+		self.Ips = []
+
+	def GrabIps(self):
+		# Grab the ips
+		try:
+			for a in socket.gethostbyname_ex(self.DomainName)[2]:
+				self.Ips.append(a)
+		except:
+			print "[-] No ips for:",self.DomainName
+
 
 # RulesDomain
 # -- Model for each domain within the rules engine

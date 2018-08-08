@@ -16,7 +16,7 @@ class Global:
 	def RequestsReponseWrap(self, curDomainRules):
 		# Https
 		try:
-			resHttps = requests.get('https://'+curDomainRules.DomainName, timeout=2)
+			resHttps = requests.get('https://'+curDomainRules.DomainName, verify=False, timeout=2)
 		except Exception,e:
 			resHttps = None # Most likely Connection/Error
 			pass
@@ -59,7 +59,7 @@ class Global:
 							print '[+] New Domains from redirect'
 							print '[*] Origin:',curDomainRules.DomainName
 							print '[*] Array:',', '.join(newDomains)
-							parsingSqlData.InsertDomainWrapper(newDomains, curInscope.InScopeId)
+							parsingSqlData.InsertDomainWrapper(newDomains, curInScope.InScopeId)
 						self.Score += -25
 						self.Results.append('Redirection_Meta_Http')
 					else:
