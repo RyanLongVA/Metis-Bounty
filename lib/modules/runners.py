@@ -12,7 +12,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 ### Runners ###
 
-class Manager:
+class ReconManager:
 	# Manager for when a program is supplied
 	def __init__(self, scope, Type, TaskListString):
 		self.Type = Type
@@ -79,7 +79,7 @@ class InScopeTaskWrapper:
 
 class RulesEngineManager:
 	def __init__(self, initScopeInput = None, domain = None, OnlyNotCalculated = None):
-		self.RulesDomains = []
+		self.RulesIps = []
 		self.OnlyNotCalculated = OnlyNotCalculated
 		if domain:
 			# start based on domain
@@ -102,64 +102,63 @@ class RulesEngineManager:
 
 	def Execute(self):
 		# Pool and multithread
-		pool = ThreadPool(50)
-		pool.map(RulesEngineManager.RulesWrapping, self.RulesDomains)
-
+		pool = ThreadPool(75)
+		pool.map(RulesEngineManager.RulesWrapping, self.RulesIps)
+		#for a in self.RulesIps:
+		#	RulesEngineManager.RulesWrapping(a)
 	@staticmethod
 	def RulesWrapping(rulesDomain):
-			print '[+] Starting on',rulesDomain.DomainName
-			# Run Globals
-			curGlobalResults = GlobalRules.Global(rulesDomain)
-			# Run Program depth rules
-			if hasattr(ProgramRules, rulesDomain.ProgramName):
-				curProgramResults = getattr(ProgramRules, rulesDomain.ProgramName)(rulesDomain)
-			else:
-				print '\t[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
-				# Set as BlankClass so stats don't break
-				curProgramResults = getattr(ProgramRules, 'BlankClass')(rulesDomain)
+		#try:
+		print '[+] Starting on %s:%s'%(rulesDomain.DomainName,rulesDomain.IpAddress)
+		# Run Globals
+		curGlobalResults = GlobalRules.Global(rulesDomain)
+		# Run Program depth rules
+		if hasattr(ProgramRules, rulesDomain.ProgramName):
+			curProgramResults = getattr(ProgramRules, rulesDomain.ProgramName)(rulesDomain)
+		else:
+			print '\t[!] Warning: Program {%s} Does not have a ProgramRulesEngine'
+			# Set as BlankClass so stats don't break
+			curProgramResults = getattr(ProgramRules, 'BlankClass')(rulesDomain)
 
-			# Set vars: Combine score, Global.Results, Program.Results
-			CombinedScore = curGlobalResults.Score + curProgramResults.Score
-			# Update in database 
-			print '\t RulesScore: %s'%CombinedScore
-			print '\t Global: %s'%','.join(curGlobalResults.Results)
-			print '\t Program: %s'%','.join(curProgramResults.Results)
-			print ''
-			statem = "UPDATE Domains SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), rulesDomain.DomainId)
-			mysqlfunc.sqlExeCommit(statem)
+		# Set vars: Combine score, Global.Results, Program.Results
+		CombinedScore = curGlobalResults.Score + curProgramResults.Score
+		# Update in database 
+		print '\t RulesScore: %s'%CombinedScore
+		print '\t Global: %s'%','.join(curGlobalResults.Results)
+		print '\t Program: %s'%','.join(curProgramResults.Results)
+		print ''
+		statem = "UPDATE Ips SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), rulesDomain.DomainId)
+		mysqlfunc.sqlExeCommit(statem)
+		#except Exception,e:
+		#	print "Error Caught @ runners.RulesEngineManager.RulesWrapping: "
+		#	print e 
+		#	pdb.set_trace()
 
 	def rulesDomainByDomain(self, domain):
 		if self.OnlyNotCalculated:
-			statem = "SELECT domainName, domainId, domainRangeId FROM Domains WHERE domainName = \'%s\' AND RulesScore IS NULL"%domain
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainName = \'%s\' AND RulesScore IS NULL"%domain
 		else:
-			statem = "SELECT domainName, domainId, domainRangeId FROM Domains WHERE domainName = \'%s\'"%domain
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainName = \'%s\'"%domain
 		result = mysqlfunc.sqlExeRet(statem)
-		if len(result) != 1:
-			print '  [-] Odd results or no results'
+		if len(result) < 1:
+			print '  [-] No results'
 			print '    [*] Info: '+statem
 			exit()
-		# Log Basics 
-		cDomainName = result[0][0]
-		cDomainId = result[0][1]
-		cDomainRangeId = result[0][2]
-		# Grab program id
-		statem = "SELECT programId FROM InScope WHERE domainRangeId = %s"%cDomainRangeId
-		cProgramId = mysqlfunc.sqlExeRet(statem)[0][0]
-		self.RulesDomains.append(models.RulesDomain(cDomainName, cDomainId, cDomainRangeId, cProgramId))
+		# Log Basics
+
+		for column in result:
+			self.RulesIps.append(models.RulesIp(column[0], column[1], column[2], column[3], column[4], column[5]))
 
 	def rulesDomainsByInScopeId(self, InScopeObject):
 		# create the connection and return all the domains 
 		if self.OnlyNotCalculated:
-			statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s AND RulesScore IS NULL"%(InScopeObject.InScopeId)
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s and RulesScore IS NULL"%(InScopeObject.InScopeId)
 		else:	
-			statem = "SELECT domainName, domainId FROM Domains WHERE domainRangeId = %s"%(InScopeObject.InScopeId)
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s"%(InScopeObject.InScopeId)
 		domainsSqlOut = mysqlfunc.sqlExeRet(statem)
 		for column in domainsSqlOut:
-			# Build the needed info 
-			cDomainName = column[0] 
-			cDomainId = int(column[1])
 			# Append to results a creation of the rulesDomains object 
-			self.RulesDomains.append(models.RulesDomain(cDomainName, cDomainId, InScopeObject.InScopeId, InScopeObject.ProgramId))
+			self.RulesIps.append(models.RulesIp(column[0], column[1], column[2], column[3], column[4], column[5]))
 
 # Checking Ips
 class DomainResolve:
@@ -185,8 +184,8 @@ class DomainResolve:
 			
 			# Insert new Ips record 
 			# 	INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ((select domainId from Domains where domainName = 'flicker.com'), '212.82.102.24', now(), now())
-	def DomainsCheck(self):
-		for a in self.domainObjects:
+	def DomainsCheck(self, threads = 10):
+		def domainsThreaded(a):
 			a.GrabIps()
 			# Check that they exist in sql
 			print '[*]',a.DomainName,':',','.join(a.Ips)
@@ -196,6 +195,9 @@ class DomainResolve:
 				if not mysqlfunc.sqlExeRetOne("select domainId from Ips where ipAddress = \'"+b+"\' and domainId = "+str(a.DomainId)):
 					# The pair doesn't exist
 					mysqlfunc.sqlExeCommit("INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ("+str(a.DomainId)+", \'"+b+"\', now(), now())")
+		pool = ThreadPool(threads)
+		pool.map(domainsThreaded, self.domainObjects)
+
 
 class CheckDomainResolveFromIps:
 	def __init__(self, program = None, ip = None, domainRangeId = None, domain = None):
@@ -216,12 +218,16 @@ class CheckDomainResolveFromIps:
 			ipSql = mysqlfunc.sqlExeRet('SELECT distinct ipAddress from Ips where domainId IN ('+','.join(str(x) for x in domainIds)+')')
 			for a in ipSql:
 				self.ipObjects.append(models.Ip(a[0]))
-	def Execute(self):
+	def Execute(self, threads = 10):
+		def selfExe(myObject):
+			myObject.ReverseResolve()
 		for a in self.ipObjects:
 			a.GrabDomains()
 		# Breaking up the functions so there's no environment for race conditions
-		for a in self.ipObjects:
-			a.ReverseResolve()
+		pool = ThreadPool(threads)
+		pool.map(selfExe, self.ipObjects)
+		#for a in self.ipObjects:
+		#	a.ReverseResolve()
 
 
 

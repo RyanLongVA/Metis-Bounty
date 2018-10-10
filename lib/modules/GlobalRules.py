@@ -27,6 +27,8 @@ class Global:
 			resHttp = None
 		Global.__Redirection__(self, curDomainRules, resHttp, resHttps)
 		Global.__ResponseExistence__(self, resHttp, resHttps)
+		Global.__Response200__(self, resHttp=resHttp, resHttps=resHttps)
+		Global.__Content0__(self, resHttp=resHttp, resHttps=resHttps)
 
 	def __Redirection__(self, curDomainRules, resHttp, resHttps):
 		if resHttp:
@@ -96,7 +98,7 @@ class Global:
 							print '[+] New Domains from redirect'
 							print '[*] Origin:',curDomainRules.DomainName
 							print '[*] Array:',', '.join(newDomains)
-							parsingSqlData.InsertDomainWrapper(newDomains, curInscope.InScopeId)
+							parsingSqlData.InsertDomainWrapper(newDomains, curInScope.InScopeId)
 						self.Score += -75
 						self.Results.append('Redirection_Https_Meta')
 					else:
@@ -104,85 +106,40 @@ class Global:
 						print "Odd meta http-equiv refresh tag from: "+resHttps.url+" \t Tag: "+result
 						logger.logInteresting("Odd meta http-equiv refresh tag from: "+resHttps.url+" \t Tag: "+result)
 
-
-	# def __RedirectionByStatusCode__(self, curDomainRules, resHttps, resHttp):
-	# 	# Check https redirection
-	# 	try:
-	# 		# If it redirected
-	# 		if len(resHttps.history) != 0:
-	# 			# Grab all redirection urls and see if they are inScope
-	# 			redirectionArray = []
-	# 			for historyItem in resHttps.history:
-	# 				redirectionArray.append(urlparse(historyItem.url).netloc)
-	# 			# Have to initialize a InScope class to send to the next function
-	# 			curInScope = models.InScope(curDomainRules.InScopeId)
-	# 			newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(redirectionArray, curInScope)
-	# 			if len(newDomains) != 0:
-	# 				print '[+] New Domains from redirect'
-	# 				print '[*] Origin:',curDomainRules.DomainName
-	# 				print '[*] Array:',', '.join(newDomains)
-	# 				parsingSqlData.InsertDomainWrapper(newDomains, curInScope.InScopeId)
-
-	# 			# Checking to see if http exists
-	# 			if resHttp == None:
-	# 				# Adding score if there was no Http response
-	# 				self.Score += -100
-	# 				self.Results.append('RedirectionByStatusCode')
-	# 			else:
-	# 				# Don't need to try/except >> if resHttp is not None, than it's a response object with a history attribute 
-	# 				if len(resHttp.history) != 0:
-	# 					# Else http doesn't redirect and https does
-	# 					# Parse http
-
-	# 					redirectionArray = [] 
-	# 					for historyItem in resHttp.history:
-	# 						redirectionArray.append(urlparse(historyItem.url).netloc)
-	# 					curInScope = models.InScope(curDomainRules.InScopeId)
-	# 					newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(redirectionArray, curInScope)
-	# 					if len(newDomains) != 0:
-	# 						print '[+] New Domains from redirect'
-	# 						print '[*] Origin:',curDomainRules.DomainName
-	# 						print '[*] Array:',', '.join(newDomains)
-	# 						parsingSqlData.InsertDomainWrapper(newDomains, curInScope.InScopeId)
-	# 					self.Score += -100
-	# 					self.Results.append('RedirectionByStatusCode')
-
-	# 	except AttributeError,e:
-	# 		# Check if it's from the history key
-	# 		if 'history' in e[0]:
-	# 			# Https response was None
-	# 			try:
-	# 				if len(resHttp.history) != 0:
-	# 					redirectionArray = []
-	# 					for historyItem in resHttp.history:
-	# 						redirectionArray.append(urlparse(historyItem.url).netloc)
-	# 					# Have to initialize a InScope class to send to the next function
-	# 					curInScope = models.InScope(curDomainRules.InScopeId)
-	# 					newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(redirectionArray, curInScope)
-	# 					if len(newDomains) != 0:
-	# 						print '[+] New Domains from redirect'
-	# 						print '[*] Origin:',curDomainRules.DomainName
-	# 						print '[*] Array:',', '.join(newDomains)
-	# 						parsingSqlData.InsertDomainWrapper(newDomains, curInScope.InScopeId)
-	# 					self.Score += -100
-	# 					self.Results.append('RedirectionByStatusCode')
-	# 			except:
-	# 				# Http Response was none
-	# 				pass
-	# 		else:
-	# 			print '[-] An unexpected error occured'
-	# 			print e
-	# 			pdb.set_trace()
-
 	def __ResponseExistence__(self, resHttp, resHttps):
-		if not resHttp: 
+		if resHttp == None: 
 			self.Score += -50
 			self.Results.append('ResponseExistence_Http')
-		if not resHttps:
+		if resHttps == None:
 			self.Score += -75
 			self.Results.append('ResponseExistence_Https')
 
-
+	def __Response200__(self, resHttp = None, resHttps = None):
+		try:
+			if resHttp.status_code == 200:
+				self.Score += 30
+				self.Results.append('Response200_Http')
+		except:
+			pass
+		try:
+			if resHttps.status_code == 200:
+				self.Score += 30
+				self.Results.append('Response200_Https')
+		except:
+			pass
+	def __Content0__(self, resHttp = None, resHttps = None):
+		try: 
+			if len(resHttps.content) == 0:
+				self.Score += -50
+				self.Results.append('Content0_Https')
+		except:
+			pass
+		try:
+			if len(resHttp.content) == 0:
+				self.Score += -50
+				self.Results.append('Content0_Http')
+		except:
+			pass
 
 
 		

@@ -10,7 +10,6 @@ def checkHostByName(domainName):
 		if '192.168.0.1' in result:
 			print '[-] '+domainName+' : '+result
 			print '[*] Seems like it may have failed locally'
-			pdb.set_trace()
 		else:
 			return True
 	except:

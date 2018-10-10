@@ -1,6 +1,8 @@
 import models, pdb, MySQLdb, logger, subprocess, parsingSqlData, os, sys, dnsCheck
 import lib.modules.variables as variables
 import mysqlfunc
+from multiprocessing.dummy import Pool as ThreadPool
+from functools import partial
 
 ## Tasks based on InScopes	
 
@@ -16,9 +18,16 @@ def Subfinder(InScopeObject):
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
 		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)
 		# Check Internet
+
 		if dnsCheck.checkInternet():
-			for domain in newDomains:
-				mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
+			print '[*] Internet seems to be successs in responses'
+			print '[*] \tStarting insert newDomains'
+			# Need to wrap this so it's faster
+			pool = ThreadPool(50)
+			insertDomainInScopeId = partial(mysqlfunc.insertDomain, domainRangeId = InScopeObject.InScopeId)
+			pool.map(insertDomainInScopeId, newDomains)
+			#for domain in newDomains:
+			#+	mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
 		else: 
 			print '[-] Internet Check failed'
 			logger.logError('[-] Internet check failed: '+', '.join(newDomains))

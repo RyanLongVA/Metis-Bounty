@@ -54,3 +54,4 @@ def InsertDomainWrapper(domainArray, InScopeId):
     else: 
         print '[-] Internet Check failed'
         logger.logError('[-] Internet check failed: '+', '.join(newDomains))
+

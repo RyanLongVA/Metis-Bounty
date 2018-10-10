@@ -65,9 +65,18 @@ class Ip:
 
 	def ReverseResolve(self):	
 		for a in self.DomainIds:
-			resolveable = False
-			# always deletes
-			for b in socket.gethostbyname_ex(mysqlfunc.domainNameByDomainId(a))[2]:
+                        resolveable = False
+                        # always deletes
+                        try: 
+                            dNameList = socket.gethostbyname_ex(mysqlfunc.domainNameByDomainId(a))[2]
+                        except:
+                            # Domain wasn't resolvable, but most likely should have been 
+                            try: 
+                                dNameList = socket.gethostbyname_ex(mysqlfunc.domainNameByDomainId(a))[2]
+                            except:
+                                dNameList = []
+                                resolveable = True
+		    	for b in dNameList:
 				if b == self.Ip:
 					resolveable = True
 			if not resolveable:
@@ -92,17 +101,18 @@ class Domain:
 			print "[-] No ips for:",self.DomainName
 
 
-# RulesDomain
-# -- Model for each domain within the rules engine
+# RulesIp
+# -- Model for each ip within the rules engine
 
-class RulesDomain:
-
-	def __init__(self, DomainName, DomainId, InScopeId, ProgramId):
-		self.DomainName = DomainName
-		self.DomainId = int(DomainId)
-		self.InScopeId = int(InScopeId)
-		self.ProgramId = int(ProgramId)
-		self.ProgramName = mysqlfunc.programNameByProgramId(ProgramId)
+class RulesIp:
+	def __init__(self, domainName, domainId, inScopeId, ipAddress, programId, programName):
+		self.DomainName = domainName
+		self.DomainId = int(domainId)
+		self.InScopeId = int(inScopeId)
+		self.IpAddress = ipAddress
+		self.ProgramId = int(programId)
+		self.ProgramName = programName
+		
 
 # Quick dict for scope types
 ScopeTypes = {

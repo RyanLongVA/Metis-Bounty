@@ -1,5 +1,6 @@
 import requests, pdb
-
+import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 #
 class BlankClass:
 	def __init__(self, curDomainRules):
@@ -41,6 +42,7 @@ class Yahoo:
 		Yahoo.__Sorry_Page_Not_Found_Common__(self, resHttp, resHttps)
 		Yahoo.__Site_Under_Construction_Common__(self, resHttp, resHttps)
 		Yahoo.__Ad_Manager_Plus_Common__(self, resHttp, resHttps)
+		Yahoo.__Need_Login_Yahoosmallbusiness__(self, resHttp, resHttps)
 	def __Sorry_Page_Not_Found_Common__(self, resHttp, resHttps):
 		# Based on example: https://av-beapa10.adx.vip.ir2.yahoo.com/
 		if resHttp:
@@ -66,6 +68,25 @@ class Yahoo:
 			if 'Welcome to Yahoo Ad Manager Plus (YAM+)!' == resHttp.content:
 				self.Score += -80
 				self.Results.append('Ad_Manager_Plus_Http')
+		if resHttps:
 			if 'Welcome to Yahoo Ad Manager Plus (YAM+)!' == resHttps.content:
 				self.Score += -80
 				self.Results.append('Ad_Manager_Plus_Http')
+	def __Need_Login_Yahoosmallbusiness__(self, resHttp, resHttps):
+		if resHttp:
+			if resHttp.url.startswith('https://login.yahoosmallbusiness.com/login'):
+				self.Score += -20
+				self.Results.append('Need_Login_Yahoosmallbusiness__Http')
+		if resHttps:
+			if resHttps.url.startswith('https://login.yahoosmallbusiness.com/login'):
+				self.Score += -20
+				self.Results.append('Need_Login_Yahoosmallbusiness__Https')
+	def __Not_Found_On_Accelerator__(self, resHttp, resHttps):
+		if resHttp:
+			if '<TITLE>Not Found on Accelerator</TITLE>' in resHttp:
+				self.Score += -20
+				self.Results.append('Not_Found_On_Accelerator__Http')
+		if resHttps:
+			if '<TITLE>Not Found on Accelerator</TITLE>' in resHttps:
+				self.Score += -20
+				self.Results.append('Not_Found_On_Accelerator__Https')

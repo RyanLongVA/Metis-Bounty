@@ -1,7 +1,7 @@
 -- Revamped Database Layout Creation
 -- MySQL
-CREATE DATABASE bountiesDev;
-USE bounties2;
+CREATE DATABASE bounties;
+USE bounties;
  
 
 CREATE TABLE Programs (
@@ -42,7 +42,6 @@ CREATE TABLE BlacklistedDomains (
 CREATE TABLE Domains (
         domainRangeId int NOT NULL,
         domainName varchar(50),
-        domainTitle varchar(20),
         dateFound date NOT NULL,
         domainId int AUTO_INCREMENT PRIMARY KEY,
     	FOREIGN KEY (domainRangeId)
@@ -59,41 +58,14 @@ CREATE TABLE Ips (
         dateFailed date,
         portsTCP text,
         portsUDP text,
+        RulesGlobal varchar(1500),
+        RulesProgram varchar(1500),
+        RulesScore int(11),
+        DateAudited date,
+        AuditScore int(11),
 		FOREIGN KEY (domainId)
     		REFERENCES Domains(domainId)
 );
-
- 
-
-CREATE TABLE cnames (
-        domainId int NOT NULL,
-        domainCnamePointer text NOT NULL,
-        ignoreRecord bit NOT NULL DEFAULT 0,
-        domainCnameId int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-		FOREIGN KEY (domainId)
-    		REFERENCES Domains(domainId)
-);
-
- 
-
-CREATE TABLE cnameIps (
-        domainCnameId int NOT NULL,
-        ipAddress text NOT NULL,
-        dateFound date NOT NULL,
-        dateChecked date NOT NULL,
-        dateFailed date,
-        portsTCP text,
-        portsUDP text,
-    	FOREIGN KEY (domainCnameId)
-    		REFERENCES cnames(domainCnameId)
-);
-
- 
-
-CREATE TABLE cnameIgnores (
-       scope text NOT NULL
-);
-
 
 -- Stored Procedure: UpdatingAudit
 
