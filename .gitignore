@@ -9,7 +9,7 @@ lib/data/changes.txt
 tempFiles/*
 
 # Wordlists
-wordlists/dns/*
+wordlists/*
 
 # New log
 log.txt
