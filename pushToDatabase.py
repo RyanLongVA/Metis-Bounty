@@ -352,7 +352,6 @@ def main():
                 if b == '192.168.0.1':
                     print '[-] Failed1 (locally?): '+domain
                     fails1.append(domain)
-
             except Exception,e:
                 if e[0] == -2:
                     fails1.append(domain)

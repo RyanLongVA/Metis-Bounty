@@ -1,9 +1,17 @@
 - With IPs we can now scan for virtualhosts within them 
 - ASN Scanning 
-- Update check for tools >> maybe just a script
-    - go get upgrade (subfinder)
-- Could make the rules engine initial based on a sole domain
 
 Revisions:
-	- Add double checking on -cd
 	- Need to finish crtsh
+
+- the issue is that 502 (and other odd statuses) are making if resHttp a noncompliant
+	> Need an odd status catcher // that is dynamic to the name (Just the rules tag needs to be dynamic) 
+
+- AsyncIO
+
+Need to do RN: 
+- -cd 
+- Update Ips by domain >> Then check domain by ips(Badly needed)
+- Then run rules
+- > Pipe one of those rules to Eyewitness to check any differences in the response (Or script up my own tool if they're extremely similar)
+	> Then step 2 of the tool is to generate a report based on directory bruteforcing and flagging any different 

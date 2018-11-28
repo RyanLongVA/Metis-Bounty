@@ -102,7 +102,7 @@ class RulesEngineManager:
 
 	def Execute(self):
 		# Pool and multithread
-		pool = ThreadPool(75)
+		pool = ThreadPool(50)
 		pool.map(RulesEngineManager.RulesWrapping, self.RulesIps)
 		#for a in self.RulesIps:
 		#	RulesEngineManager.RulesWrapping(a)
@@ -127,7 +127,7 @@ class RulesEngineManager:
 		print '\t Global: %s'%','.join(curGlobalResults.Results)
 		print '\t Program: %s'%','.join(curProgramResults.Results)
 		print ''
-		statem = "UPDATE Ips SET RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), rulesDomain.DomainId)
+		statem = "UPDATE Ips SET dateChecked = now(), RulesScore = %s, RulesGlobal = \'%s\', RulesProgram = \'%s\' WHERE domainId = %s"%(CombinedScore, ','.join(curGlobalResults.Results), ','.join(curProgramResults.Results), rulesDomain.DomainId)
 		mysqlfunc.sqlExeCommit(statem)
 		#except Exception,e:
 		#	print "Error Caught @ runners.RulesEngineManager.RulesWrapping: "
@@ -152,9 +152,9 @@ class RulesEngineManager:
 	def rulesDomainsByInScopeId(self, InScopeObject):
 		# create the connection and return all the domains 
 		if self.OnlyNotCalculated:
-			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s and RulesScore IS NULL"%(InScopeObject.InScopeId)
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s and RulesScore IS NULL ORDER BY dateChecked"%(InScopeObject.InScopeId)
 		else:	
-			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s"%(InScopeObject.InScopeId)
+			statem = "SELECT a.domainName, a.domainId, a.domainRangeId, b.ipAddress, c.programId, d.name FROM Domains as a join Ips as b on a.domainId = b.domainId join InScope as c on a.domainRangeId = c.domainRangeId join Programs as d on c.programId = d.programId WHERE a.domainRangeId = %s ORDER BY dateChecked"%(InScopeObject.InScopeId)
 		domainsSqlOut = mysqlfunc.sqlExeRet(statem)
 		for column in domainsSqlOut:
 			# Append to results a creation of the rulesDomains object 
@@ -189,14 +189,31 @@ class DomainResolve:
 			a.GrabIps()
 			# Check that they exist in sql
 			print '[*]',a.DomainName,':',','.join(a.Ips)
+			# Select all current ips 
+			curDBIps = mysqlfunc.sqlExeRet("select ipAddress from Ips where domainId = "+str(a.DomainId))
+			tempCurDBIps = []
+			# Delete all that are not in curDNSIps
+			for b in curDBIps:
+				tempCurDBIps.append(b[0])
+				try:
+					if b[0] not in a.Ips:
+						# This Ip is not in the current DNS entry >> Delete it
+						mysqlfunc.sqlExeCommit("DELETE FROM Ips where domainId = "+str(a.DomainId)+" and ipAddress = \'"+b[0]+"\'")
+				except Exception,e:
+					print e
+					pdb.set_trace()
+			# Add all that are not in database
 			for b in a.Ips:
 				if b is '0.0.0.0':
 					continue
-				if not mysqlfunc.sqlExeRetOne("select domainId from Ips where ipAddress = \'"+b+"\' and domainId = "+str(a.DomainId)):
-					# The pair doesn't exist
-					mysqlfunc.sqlExeCommit("INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ("+str(a.DomainId)+", \'"+b+"\', now(), now())")
-		pool = ThreadPool(threads)
+				if b not in tempCurDBIps:
+					mysqlfunc.sqlExeCommit("INSERT into Ips (domainId, ipAddress, dateFound, dateChecked) VALUES ("+str(a.DomainId)+", \'"+b+"\', date(now()), date(now()))")
+		pool = ThreadPool(int(threads))
 		pool.map(domainsThreaded, self.domainObjects)
+		# for a in self.domainObjects:
+		# 	domainsThreaded(a)
+
+		#domainsThreaded(self.domainObjects[0])
 
 
 class CheckDomainResolveFromIps:

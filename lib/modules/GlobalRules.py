@@ -29,6 +29,7 @@ class Global:
 		Global.__ResponseExistence__(self, resHttp, resHttps)
 		Global.__Response200__(self, resHttp=resHttp, resHttps=resHttps)
 		Global.__Content0__(self, resHttp=resHttp, resHttps=resHttps)
+		Global.__Response_Redirect__(self, resHttp=resHttp, resHttps=resHttps)
 
 	def __Redirection__(self, curDomainRules, resHttp, resHttps):
 		if resHttp:
@@ -116,15 +117,23 @@ class Global:
 
 	def __Response200__(self, resHttp = None, resHttps = None):
 		try:
-			if resHttp.status_code == 200:
-				self.Score += 30
-				self.Results.append('Response200_Http')
+			if len(resHttp.history) == 0:
+				if resHttp.status_code == 200:
+					self.Score += 30
+					self.Results.append('Response200_Http')
+				else:
+					self.Score += -20
+					self.Results.append('Response_%s'%str(resHttp.status_code))
 		except:
 			pass
 		try:
-			if resHttps.status_code == 200:
-				self.Score += 30
-				self.Results.append('Response200_Https')
+			if len(resHttps.history) == 0:
+				if resHttps.status_code == 200:
+					self.Score += 30
+					self.Results.append('Response200_Https')
+				else:
+						self.Score += -20
+						self.Results.append('Response_%s'%str(resHttps.status_code))
 		except:
 			pass
 	def __Content0__(self, resHttp = None, resHttps = None):
@@ -141,7 +150,18 @@ class Global:
 		except:
 			pass
 
-
-		
+	def __Response_Redirect__(self, resHttp = None, resHttps = None):
+		try:
+			if len(resHttp.history) != 0:
+				self.Score += -10
+				self.Results.append('Redirect_%s_Times'%str(len(resHttp.history)))
+		except:
+			pass
+		try: 
+			if len(resHttps.history) != 0:
+				self.Score += -10 
+				self.Results.append('Redirect_%s_Times'%str(len(resHttps.history)))
+		except:
+			pass
 
 		

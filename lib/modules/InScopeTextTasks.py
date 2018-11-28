@@ -51,11 +51,21 @@ def Amass(InScopeObject):
 	# Remove the files between 
 	subprocess.call('rm '+outputFileLoc, shell=True)
 	subprocess.call(variables.goBin+'amass -d %s -o %s /dev/null'%(InScopeObject.ScopeText[2:], outputFileLoc), shell=True)	
-	try: 
+	try:
 		domainsOutput = subprocess.check_output('cat '+outputFileLoc, shell=True)
 		newDomains = parsingSqlData.returnNewDomainsArrayInScopeObject(filter(None, domainsOutput.split('\n')), InScopeObject)
-		for domain in newDomains:
-			mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
+		if dnsCheck.checkInternet():
+			print '[*] Internet seems to be successs in responses'
+			print '[*] \tStarting insert newDomains'
+			# Need to wrap this so it's faster
+			pool = ThreadPool(50)
+			insertDomainInScopeId = partial(mysqlfunc.insertDomain, domainRangeId = InScopeObject.InScopeId)
+			pool.map(insertDomainInScopeId, newDomains)
+			#for domain in newDomains:
+			#+	mysqlfunc.insertDomain(domain, InScopeObject.InScopeId)
+		else: 
+			print '[-] Internet Check failed'
+			logger.logError('[-] Internet check failed: '+', '.join(newDomains))
 	
 	except OSError,e:
 		if e[0] == 2:

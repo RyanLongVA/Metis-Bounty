@@ -63,6 +63,7 @@ class Yahoo:
 			if '<head> <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"> <meta name="robots" content="noindex,nofollow">  <title>This site is under construction.</title>  <link href="http://geocities.com/js_source/lander-1.css" rel="stylesheet" type="text/css"></head><' in resHttps.content:
 				self.Score += -75
 				self.Results.append('Site_Under_Construction_Common_Https')
+
 	def __Ad_Manager_Plus_Common__(self, resHttp, resHttps):
 		if resHttp:
 			if 'Welcome to Yahoo Ad Manager Plus (YAM+)!' == resHttp.content:
